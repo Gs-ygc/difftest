@@ -22,7 +22,9 @@
 #include <list>
 #include <signal.h>
 #include <sys/ipc.h>
+#if ! defined(__aarch64__) || !defined(__arm__)
 #include <sys/prctl.h>
+#endif
 #include <sys/shm.h>
 #include <sys/wait.h>
 #include <unistd.h>
