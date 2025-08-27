@@ -22,12 +22,20 @@ import scala.reflect.runtime.currentMirror
 import scala.reflect.runtime.universe._
 
 private[difftest] object DataMirror {
-  private def loadMethodOfObject(methodName: String, objectName: String): Option[MethodMirror] = {
+  private def loadMethodOfObject(
+    methodName: String,
+    objectName: String,
+    extraFilter: Symbol => Boolean = (_ => true),
+  ): Option[MethodMirror] = {
     val moduleSymb = currentMirror.staticModule(objectName)
-    val methodSymb = moduleSymb.info.decls.find(m => m.isMethod && m.name.toString == methodName).map(_.asMethod)
+    val methodSymb =
+      moduleSymb.info.decls.find(m => m.isMethod && m.name.toString == methodName && extraFilter(m)).map(_.asMethod)
     val obj = currentMirror.reflectModule(moduleSymb).instance
     methodSymb.map(s => currentMirror.reflect(obj).reflectMethod(s))
   }
+
+  // Whether we have new BoringUtils
+  def hasNewBore: Boolean = loadMethodOfObject("tapAndRead", "chisel3.util.experimental.BoringUtils").isDefined
 
   implicit class DataMirrorLoader[T <: Data](data: T) {
     def isVisible: Boolean = {
@@ -36,11 +44,19 @@ private[difftest] object DataMirror {
     }
 
     def tapAndRead(implicit si: SourceInfo): T = {
-      require(
-        !chisel3.BuildInfo.version.startsWith("3"),
-        "BoringUtils.tapAndRead does not support Chisel 3, use BoringUtils.addSource/addSink in replace.",
-      )
+      require(hasNewBore, "BoringUtils.tapAndRead not supported. Use BoringUtils.addSource/addSink instead.")
       val method = loadMethodOfObject("tapAndRead", "chisel3.util.experimental.BoringUtils")
+      val argument: Seq[Any] = Seq(data, si)
+      method.get.apply(argument: _*).asInstanceOf[T]
+    }
+
+    def bore(implicit si: SourceInfo): T = {
+      require(hasNewBore, "BoringUtils.bore(data) not supported. Use BoringUtils.addSource/addSink instead.")
+      val method = loadMethodOfObject(
+        "bore",
+        "chisel3.util.experimental.BoringUtils",
+        _.typeSignature.paramLists.flatten.map(_.typeSignature.toString()).contains("chisel3.experimental.SourceInfo"),
+      )
       val argument: Seq[Any] = Seq(data, si)
       method.get.apply(argument: _*).asInstanceOf[T]
     }
