@@ -50,6 +50,15 @@ GSIM_CXXFLAGS = $(subst \\\",\", $(SIM_CXXFLAGS)) -DNUM_CORES=$(NUM_CORES) -DGSI
 						-fbracket-depth=2048 -Wno-parentheses-equality
 LDFLAGS   =  $(SIM_LDFLAGS) -ldl $(PGO_LDFLAGS)
 
+IS_APPLE := $(shell echo | $(GSIM_CXX) -dM -E - 2>/dev/null | grep -q '__APPLE__' && echo yes)
+
+ifeq ($(IS_APPLE),yes)
+	VCPKG_ROOT := $(HOME)/vcpkg
+	GSIM_CXXFLAGS += -I$(VCPKG_ROOT)/installed/arm64-osx-osxcross/include
+	CXXFLAGS += -I$(VCPKG_ROOT)/installed/arm64-osx-osxcross/include
+	LDFLAGS += -L$(VCPKG_ROOT)/installed/arm64-osx-osxcross/lib
+endif
+
 # $(1): object file
 # $(2): source file
 # $(3): compile flags
