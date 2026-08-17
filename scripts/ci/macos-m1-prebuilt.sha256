@@ -1,0 +1,10 @@
+a11abde48eaeab71c3e3e3155d5e08d1c13edbe8793b61b3033a6b39ba3db8c1  bin/emu-vlt-min-zhuj-t4-o3
+679d830c376cf9830ee5e2a20f998e96db4c1b2a76206d468332d6f9970949bd  bin/emu-vlt-min-zhuj-t4-pgo-o3
+a881741098a648ac5bbede9caa9e0578e530a66310abfd809e4666180d55df78  bin/emu-vlt-default-openllc-t4-o3
+98ddfa7b595da4d85f986fb80cf2a4f3f3ee292f2522481b21ec64d1421e2bd0  bin/emu-vlt-default-openllc-t4-pgo-o3
+3cb897994d5f66282452d57a6e9b37aabd07b2f5505e55c9b5a0b4f00b09f3ba  bin/emu-gsim-min-o3
+738b924ab88710dd8ee0c11f6ce6c7bd7a8353f9f7988147b696f5deef9da6d0  bin/emu-gsim-min-pgo
+ebdac974bb90a02ef07a139c3b7889a949e131ff7f802e7278304c3ce0ee7bc5  bin/emu-gsim-def-o3
+80992b0a0b23c3fd3dc35425641b7fc65834abc0a835d1bf9c6d5701df9871c7  bin/emu-gsim-def-pgo
+834bcdc28a4b750a7f2afa31548b2a032bdf080b530a6274ea218acee19b8ef2  ref/riscv64-nemu-interpreter-so-arm64-834bcdc2
+c764afb8bfd69542620a4794b858867dd1e455efaac56c28eb477f1732f83e8e  coremark-2-iteration.bin

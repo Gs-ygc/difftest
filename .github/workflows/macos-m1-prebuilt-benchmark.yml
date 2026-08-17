@@ -1,0 +1,57 @@
+name: macOS M1 prebuilt emulator benchmark
+
+on:
+  push:
+    branches: [ ci/m1-emu-benchmark ]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: macos-m1-prebuilt-benchmark
+  cancel-in-progress: false
+
+env:
+  ASSET_URL: https://github.com/Gs-ygc/difftest/releases/download/m1-emu-bench-20260817/xsai-m1-benchmark-assets-20260817.tar.gz
+  ASSET_SHA256: b4baedf8a9e1308c02c7a34f37c4aaca0cfbf124c3176522f5381cf9fb0ae115
+
+jobs:
+  benchmark:
+    runs-on: macos-15
+    timeout-minutes: 300
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Download M4-built emulators
+        run: |
+          curl --fail --location --retry 5 --retry-all-errors \
+            --output emulators.tar.gz "$ASSET_URL"
+          echo "$ASSET_SHA256  emulators.tar.gz" | shasum -a 256 -c -
+          mkdir assets
+          tar -xzf emulators.tar.gz -C assets
+
+      - name: Verify benchmark inputs
+        run: |
+          cd assets
+          shasum -a 256 -c ../scripts/ci/macos-m1-prebuilt.sha256
+          file bin/* ref/*
+          test "$(uname -m)" = arm64
+          chmod +x bin/* ref/*
+
+      - name: Benchmark prebuilt emulators
+        run: scripts/ci/benchmark-prebuilt-macos-arm64.sh assets results
+
+      - name: Publish summary
+        if: always()
+        run: |
+          test -f results/summary.md && cat results/summary.md >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload benchmark results
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: macos-m1-prebuilt-benchmark-results
+          path: results
+          retention-days: 7
+          compression-level: 6
