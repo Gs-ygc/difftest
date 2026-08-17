@@ -14,6 +14,9 @@ concurrency:
 env:
   ASSET_URL: https://github.com/Gs-ygc/difftest/releases/download/m1-emu-bench-20260817/xsai-m1-benchmark-assets-20260817.tar.gz
   ASSET_SHA256: b4baedf8a9e1308c02c7a34f37c4aaca0cfbf124c3176522f5381cf9fb0ae115
+  VERILATOR_T2_URL: https://github.com/Gs-ygc/difftest/releases/download/m1-emu-bench-20260817/emu-vlt-min-zhuj-t2-o3.tar.gz
+  VERILATOR_T2_SHA256: 40182e6e92711a9706a5d69e0d835ee12caace473702d8fa56591136a47e4ca7
+  BENCH_FILTER: emu-vlt-min-zhuj-t2-o3
 
 jobs:
   benchmark:
@@ -30,11 +33,16 @@ jobs:
           echo "$ASSET_SHA256  emulators.tar.gz" | shasum -a 256 -c -
           mkdir assets
           tar -xzf emulators.tar.gz -C assets
+          curl --fail --location --retry 5 --retry-all-errors \
+            --output verilator-t2.tar.gz "$VERILATOR_T2_URL"
+          echo "$VERILATOR_T2_SHA256  verilator-t2.tar.gz" | shasum -a 256 -c -
+          tar -xzf verilator-t2.tar.gz -C assets/bin
 
       - name: Verify benchmark inputs
         run: |
           cd assets
           shasum -a 256 -c ../scripts/ci/macos-m1-prebuilt.sha256
+          echo "30b436c75359c1511cdaf2830fd04cb1e6f9923167708845fe2e122a080b8dda  bin/emu-vlt-min-zhuj-t2-o3" | shasum -a 256 -c -
           file bin/* ref/*
           test "$(uname -m)" = arm64
           chmod +x bin/* ref/*

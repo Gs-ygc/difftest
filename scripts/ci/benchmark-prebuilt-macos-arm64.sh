@@ -14,6 +14,7 @@ csv="$result_dir/summary.csv"
 hardware="$result_dir/hardware.txt"
 
 variants=(
+  "emu-vlt-min-zhuj-t2-o3|Verilator|Minimal|O3 (2T)"
   "emu-vlt-min-zhuj-t4-o3|Verilator|Minimal|O3"
   "emu-vlt-min-zhuj-t4-pgo-o3|Verilator|Minimal|PGO+O3"
   "emu-vlt-default-openllc-t4-o3|Verilator|Default/OpenLLC|O3"
@@ -103,6 +104,9 @@ run_one() {
 overall_status=0
 for variant in "${variants[@]}"; do
   IFS='|' read -r binary_name backend config optimization <<< "$variant"
+  if [[ -n "${BENCH_FILTER:-}" && "$binary_name" != "$BENCH_FILTER" ]]; then
+    continue
+  fi
   run_one "$binary_name" "$backend" "$config" "$optimization" diff-first diff || overall_status=1
   sleep 15
   run_one "$binary_name" "$backend" "$config" "$optimization" nodiff-middle nodiff || overall_status=1
