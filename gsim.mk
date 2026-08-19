@@ -15,7 +15,10 @@
 #***************************************************************************************
 
 GSIM_BIN ?= gsim
-GSIM_CXX = clang++  # only support clang++14 or above
+GSIM_CXX ?= clang++  # only support clang++14 or above
+GSIM_LINK ?= $(GSIM_CXX)
+GSIM_TARGET_TRIPLE ?= $(shell $(GSIM_CXX) -dumpmachine 2>/dev/null)
+GSIM_APPLE_TARGET := $(if $(or $(findstring apple-darwin,$(GSIM_TARGET_TRIPLE)),$(findstring apple-macos,$(GSIM_TARGET_TRIPLE))),1,0)
 
 GSIM_EMU_BUILD_DIR = $(abspath $(BUILD_DIR)/gsim-compile)
 GSIM_EMU_TARGET = $(abspath $(GSIM_EMU_BUILD_DIR)/emu)
@@ -25,7 +28,8 @@ GSIM_EMU_TARGET = $(abspath $(GSIM_EMU_BUILD_DIR)/emu)
 ##############################################
 
 GSIM_GEN_CSRC_DIR = $(GSIM_EMU_BUILD_DIR)/model
-GSIM_FLAGS = --supernode-max-size=15 --cpp-max-size-KB=8192 --sep-mod=__DOT__ --sep-aggr=__DOT__
+GSIM_CPP_MAX_SIZE_KB ?= 8192
+GSIM_FLAGS = --supernode-max-size=15 --cpp-max-size-KB=$(GSIM_CPP_MAX_SIZE_KB) --sep-mod=__DOT__ --sep-aggr=__DOT__
 
 $(GSIM_GEN_CSRC_DIR)/$(SIM_TOP)0.cpp: $(RTL_DIR)/$(SIM_TOP).fir
 	@mkdir -p $(@D)
@@ -43,6 +47,12 @@ GSIM_CXXFILES = $(EMU_CXXFILES) $(shell find $(GSIM_OTHER_CSRC_DIR) -name "*.cpp
 GSIM_CXXFLAGS = $(subst \\\",\", $(EMU_CXXFLAGS))
 GSIM_CXXFLAGS += -I$(GSIM_OTHER_CSRC_DIR) -I$(GSIM_GEN_CSRC_DIR)/ -DGSIM
 GSIM_CXXFLAGS += $(EMU_OPTIMIZE) -fbracket-depth=2048 -Wno-parentheses-equality $(PGO_CFLAGS)
+# Detect the Apple target from the compiler triple. APPLE_VCPKG_ROOT is only
+# the dependency root selected later for Linux-to-Apple cross compilation.
+GSIM_APPLE ?= $(GSIM_APPLE_TARGET)
+ifeq ($(GSIM_APPLE),1)
+GSIM_CXXFLAGS += -Xclang -fexperimental-max-bitint-width=65536
+endif
 GSIM_LDFLAGS =  $(SIM_LDFLAGS) -ldl $(PGO_LDFLAGS)
 
 # $(1): object file
@@ -63,7 +73,7 @@ endef
 define GSIM_LD_TEMPLATE =
 $(1): $(2)
 	@mkdir -p $$(@D) && echo + LD $$@
-	@$(GSIM_CXX) $$^ $(3) -o $$@
+	@$(GSIM_LINK) $$^ $(3) -o $$@
 endef
 
 $(foreach x, $(GSIM_CXXFILES), $(eval \

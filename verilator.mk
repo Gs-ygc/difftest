@@ -75,6 +75,16 @@ endif
 # C optimization
 OPT_FAST ?= -O3
 
+# These overrides are cross-build-only. Native Apple builds use Verilator's
+# normal Darwin defaults and the host zstd installation.
+VERILATOR_HOST_OS ?= $(shell uname -s)
+VERILATOR_TARGET_TRIPLE ?= $(shell $(CXX) -dumpmachine 2>/dev/null)
+VERILATOR_APPLE_TARGET := $(if $(or $(findstring apple-darwin,$(VERILATOR_TARGET_TRIPLE)),$(findstring apple-macos,$(VERILATOR_TARGET_TRIPLE))),1,0)
+ifeq ($(and $(filter Linux,$(VERILATOR_HOST_OS)),$(filter 1,$(VERILATOR_APPLE_TARGET))),1)
+VERILATOR_BUILD_ARGS += CFG_LDFLAGS_VERILATED= CFG_LDLIBS_THREADS="-pthread -lpthread"
+VERILATOR_BUILD_ARGS += UNAME_S=Darwin AR="$(AR)" CC="$(CC)" CXX="$(CXX)" LINK="$(LINK)"
+endif
+
 ########## Verilator Build Recipes ##########
 VERILATOR_FLAGS_ALL =               \
   --exe $(EMU_OPTIMIZE)             \
@@ -129,6 +139,7 @@ ifeq ($(REMOTE),localhost)
 						PGO_CFLAGS="$(PGO_CFLAGS)" \
 						PGO_LDFLAGS="$(PGO_LDFLAGS)" \
 						OBJCACHE="$(OBJCACHE)" \
+						$(VERILATOR_BUILD_ARGS) \
 						-C $(VERILATOR_BUILD_DIR) -f $(VERILATOR_MK) $(EMU_COMPILE_FILTER)
 	@sync -d $(BUILD_DIR) $(VERILATOR_BUILD_DIR)
 else

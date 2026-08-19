@@ -61,6 +61,19 @@ EMU_OPTIMIZE ?= -O3
 include verilator.mk
 include gsim.mk
 
+# Select the target-specific zstd search path only for Linux-to-Apple builds.
+# Native Apple builds use the host package, while Linux host builds use the
+# normal Linux linker search path.
+SIM_HOST_OS ?= $(shell uname -s)
+SIM_APPLE_CROSS := $(if $(filter Linux,$(SIM_HOST_OS)),$(if $(or $(filter 1,$(GSIM_APPLE_TARGET)),$(filter 1,$(VERILATOR_APPLE_TARGET))),1,0),0)
+ifeq ($(SIM_APPLE_CROSS),1)
+ifeq ($(strip $(APPLE_VCPKG_ROOT)),)
+$(error APPLE_VCPKG_ROOT is required for Linux-to-Apple cross compilation of zstd)
+endif
+SIM_CXXFLAGS += -I$(APPLE_VCPKG_ROOT)/installed/arm64-osx-osxcross/include
+SIM_LDFLAGS  += -L$(APPLE_VCPKG_ROOT)/installed/arm64-osx-osxcross/lib
+endif
+
 ########## Emu build recipes ##########
 
 emu-verilator: verilator-emu
